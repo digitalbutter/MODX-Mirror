@@ -1,5 +1,5 @@
 --------------------
-Extra: Mirror
+Plugin: Mirror
 --------------------
 Version: 1.0-beta1
 
