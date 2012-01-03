@@ -1,0 +1,5 @@
+Changelog file for Mirror plugin.
+
+Mirror 1.0-beta1
+====================================
+- First release
