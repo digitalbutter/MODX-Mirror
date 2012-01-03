@@ -8,6 +8,7 @@ if (!defined('T_ML_COMMENT')) {
 /**
  * @property boolean $cacheEnabled
  * @property boolean $processComments
+ * @property boolean $supportStatic
  * @property modX $modx
  */
 class Mirror
@@ -16,6 +17,7 @@ class Mirror
 	protected $_config;
 	protected $_cacheEnabled;
 	protected $_processComments;
+	protected $_supportStatic;
 	/**
 	 * @var PDOStatement[] $_cacheCommands
 	 */
@@ -112,6 +114,9 @@ class Mirror
 									}
 									if (isset($metaData['modxCategory'])) {
 										$metaData['modxCategory'] = trim($metaData['modxCategory'], '/');
+									}
+									if (!$this->supportStatic) {
+										unset($metaData['modxStaticFile']);
 									}
 								}
 							}
@@ -235,7 +240,7 @@ class Mirror
 						}
 					}
 					$objects = $this->modx->getCollection($objectMeta['className']);
-					foreach ($objects as /** @var modElement $object */$object) {
+					foreach ($objects as /** @var modElement $object */ $object) {
 						$name = $object->get($nameField);
 						$categoryTree = $this->_getCategoryTree($object->get('category'), $objectName);
 						$fileName = $basePath . '/' . $categoryTree . ($categoryTree != '' ? '/' : '') . $name . '.' . $objectMeta['extension'];
@@ -257,7 +262,7 @@ class Mirror
 							$hash .= ':' . $object->get('description');
 							$hash .= ':' . $categoryTree;
 							$hash .= ':' . implode('|', $events);
-							$hash .= $object->isStatic() ? $object->get('static_file') : '';
+							$hash .= ':' . (($this->supportStatic && $object->isStatic()) ? $object->get('static_file') : '');
 						}
 						$hash = md5($hash);
 						if ($this->cacheEnabled) {
@@ -276,7 +281,7 @@ class Mirror
 							'description' => trim($object->get('description')),
 							'categoryTree' => $categoryTree,
 							'events' => $events,
-							'static' => $object->isStatic() ? $object->get('static_file') : '',
+							'static' => ($this->supportStatic && $object->isStatic()) ? $object->get('static_file') : '',
 						));
 						if ($this->_createFile($fileName, $rawContent, $meta)) {
 							if ($this->cacheEnabled) {
@@ -352,6 +357,15 @@ class Mirror
 			}
 		}
 		return $this->_processComments;
+	}
+
+	public function getSupportStatic()
+	{
+		if ($this->_supportStatic === null) {
+			$modxVersion = $this->modx->getVersionData();
+			$this->_supportStatic = version_compare($modxVersion['version'] . '.' . $modxVersion['major_version'], '2.2', '>=');
+		}
+		return $this->_supportStatic;
 	}
 
 	protected function _checkSqliteSupport($createTables = true)
@@ -541,7 +555,7 @@ EOD;
 			$events = $separator . implode($separator, $metaData['events']);
 		}
 		if (!empty($metaData['static'])) {
-			$static = PHP_EOL . ' * @modxStaticFile  '. $metaData['static'];
+			$static = PHP_EOL . ' * @modxStaticFile  ' . $metaData['static'];
 		}
 		if ($this->processComments && $metaData['processComments']) {
 			$content .= <<<EOD
