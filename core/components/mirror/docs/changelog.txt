@@ -3,3 +3,8 @@ Changelog file for Mirror plugin.
 Mirror 1.0-beta1
 ====================================
 - First release
+
+Mirror 1.0-beta2
+====================================
+- Added checking of static elements support
+- Added internationalization support

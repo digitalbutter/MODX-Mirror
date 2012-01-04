@@ -38,6 +38,7 @@ class Mirror
 		if (!file_exists($assetsPath)) {
 			$this->modx->cacheManager->writeTree($assetsPath);
 		}
+		$this->modx->lexicon->load('mirror:default');
 	}
 
 	public function __get($name)
@@ -60,7 +61,9 @@ class Mirror
 					$basePath = $assetsPath . $objectName;
 					if (!file_exists($basePath)) {
 						if (!$this->modx->cacheManager->writeTree($basePath)) {
-							$this->_log('Directory ' . $basePath . ' was not created');
+							$this->_log('directoryNotCreated', array(
+								'path' => $basePath,
+							));
 							continue;
 						}
 					}
@@ -139,7 +142,9 @@ class Mirror
 							$this->_cacheCommands['selectFile']->execute();
 							if ($row = $this->_cacheCommands['selectFile']->fetch()) {
 								if ($hash == $row['hash']) {
-									$this->_log('File ' . $file . ' was not changed', true);
+									$this->_log('fileNotChanged', array(
+										'file' => $file,
+									), true);
 									continue;
 								}
 								$fileId = $row['id'];
@@ -162,7 +167,10 @@ class Mirror
 								'static' => isset($metaData['modxStaticFile']) ? $metaData['modxStaticFile'] : '',
 							));
 							if ($this->_createFile($fileName, $rawContent, $meta)) {
-								$this->_log('File ' . $file . ' was moved to ' . $fileName, true);
+								$this->_log('fileMoved', array(
+									'sourceFile' => $file,
+									'targetFile' => $fileName,
+								), true);
 								$this->_deleteFile($file);
 								$processedFiles[$fileName] = true;
 								if ($this->cacheEnabled) {
@@ -210,9 +218,11 @@ class Mirror
 									$pluginEvent->set('pluginid', $object->get('id'));
 									$pluginEvent->set('event', $eventName);
 									$pluginEvent->set('priority', 0);
-									//$pluginEvent->set('propertyset', 0);
 									if (!$pluginEvent->save()) {
-										$this->_log('Event ' . $eventName . ' was not attached to plugin ' . $name);
+										$this->_log('eventNotAttached', array(
+											'event' => $eventName,
+											'plugin' => $name,
+										));
 									}
 								}
 								$pluginEvents = $object->getMany('PluginEvents', array(
@@ -236,7 +246,10 @@ class Mirror
 								}
 							}
 						} else {
-							$this->_log('Object of class ' . $objectMeta['className'] . ' with name ' . $name . ' was not saved', true);
+							$this->_log('objectNotSaved', array(
+								'class' => $objectMeta['className'],
+								'name' => $name,
+							));
 						}
 					}
 					$objects = $this->modx->getCollection($objectMeta['className']);
@@ -271,7 +284,9 @@ class Mirror
 							$this->_cacheCommands['selectFile']->execute();
 							if ($row = $this->_cacheCommands['selectFile']->fetch()) {
 								if ($hash == $row['hash']) {
-									$this->_log('File ' . $fileName . ' was not changed', true);
+									$this->_log('fileNotChanged', array(
+										'file' => $fileName,
+									), true);
 									continue;
 								}
 								$fileId = $row['id'];
@@ -301,14 +316,16 @@ class Mirror
 					foreach ($files as $file) {
 						if (!isset($processedFiles[$file])) {
 							if ($this->_deleteFile($file)) {
-								$this->_log('File ' . $file . ' was deleted', true);
+								$this->_log('fileDeleted', array(
+									'file' => $file,
+								), true);
 							}
 						}
 					}
 				}
 				@unlink($lockFileName);
 			} else {
-				$this->_log('Another instance of Mirror is already running');
+				$this->_log('alreadyRunning');
 			}
 		}
 	}
@@ -419,7 +436,9 @@ EOD;
 		while ($category != null) {
 			$level++;
 			if ($level > 2) {
-				$this->_log('Categories tree was truncated for category with ID ' . $categoryId, true);
+				$this->_log('categoryTruncated', array(
+					'category' => $categoryId,
+				), true);
 				break;
 			}
 			$tree[] = $category['name'];
@@ -455,7 +474,9 @@ EOD;
 		$parts = explode('/', $categoryTree);
 		if (count($parts) > 2) {
 			$parts = array_slice($parts, 0, 2);
-			$this->_log('Categories tree ' . $categoryTree . ' was truncated', true);
+			$this->_log('categoryTreeTruncated', array(
+				'category' => $categoryTree,
+			), true);
 		}
 		$categoryId = 0;
 		foreach ($parts as $part) {
@@ -627,7 +648,7 @@ EOD;
 		return $list;
 	}
 
-	protected function _log($message, $debug = false)
+	protected function _log($key, $params = array(), $debug = false)
 	{
 		static $fileName;
 		if ($debug && !$this->getOption('verboseLogging')) {
@@ -636,6 +657,6 @@ EOD;
 		if ($fileName == null) {
 			$fileName = $this->getOption('assetsPath') . 'actions.log';
 		}
-		$this->modx->cacheManager->writeFile($fileName, '[' . strftime('%Y-%m-%d %H:%M:%S') . '] ' . $message . PHP_EOL, 'a');
+		$this->modx->cacheManager->writeFile($fileName, '[' . strftime('%Y-%m-%d %H:%M:%S') . '] ' . $this->modx->lexicon('mirror.' . $key, $params) . PHP_EOL, 'a');
 	}
 }
