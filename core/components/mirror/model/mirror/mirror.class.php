@@ -193,11 +193,14 @@ class Mirror
 						$object->set('description', $description);
 						$object->set('category', intval($categoryId));
 						if (!empty($metaData['modxStaticFile'])) {
-							$staticFileName = str_replace('{base_path}', $this->modx->getOption('base_path'), $metaData['modxStaticFile']);
-							if ($this->modx->cacheManager->writeFile($staticFileName, $rawContent, 'w')) {
-								$object->set('source', 1);
-								$object->set('static', 1);
-								$object->set('static_file', $staticFileName);
+							$staticInfo = explode('@', $metaData['modxStaticFile'], 2);
+							$object->set('source', (count($staticInfo) == 2 && is_numeric($staticInfo[0])) ? $staticInfo[0] : 1);
+							$object->set('static', 1);
+							$object->set('static_file', $staticInfo[count($staticInfo) - 1]);
+							if (!$object->setFileContent($rawContent)) {
+								$object->set('source', 0);
+								$object->set('static', 0);
+								$object->set('static_file', '');
 							}
 						}
 						$object->setContent($rawContent);
@@ -275,7 +278,7 @@ class Mirror
 							$hash .= ':' . $object->get('description');
 							$hash .= ':' . $categoryTree;
 							$hash .= ':' . implode('|', $events);
-							$hash .= ':' . (($this->supportStatic && $object->isStatic()) ? $object->get('static_file') : '');
+							$hash .= ':' . (($this->supportStatic && $object->isStatic()) ? ($object->get('source') . '@' . $object->get('static_file')) : '');
 						}
 						$hash = md5($hash);
 						if ($this->cacheEnabled) {
@@ -296,7 +299,7 @@ class Mirror
 							'description' => trim($object->get('description')),
 							'categoryTree' => $categoryTree,
 							'events' => $events,
-							'static' => ($this->supportStatic && $object->isStatic()) ? $object->get('static_file') : '',
+							'static' => ($this->supportStatic && $object->isStatic()) ? ($object->get('source') . '@' . $object->get('static_file')) : '',
 						));
 						if ($this->_createFile($fileName, $rawContent, $meta)) {
 							if ($this->cacheEnabled) {
