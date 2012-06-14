@@ -3,7 +3,8 @@
  * @var modX $modx
  * @var array $scriptProperties
  */
-if ($modx->event->name != 'OnWebPageInit' || $modx->context->get('key') == 'mgr') {
+$flushParameterName = $modx->getOption('mirror.flushParameterName', null, 'flush');
+if ($modx->event->name != 'OnWebPageInit' || $modx->context->get('key') == 'mgr' || !isset($_GET[$flushParameterName])) {
 	return;
 } else {
 	$resourceId = $modx->resourceIdentifier;
