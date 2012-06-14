@@ -3,8 +3,8 @@
  * @var modX $modx
  * @var array $scriptProperties
  */
-$flushParameterName = $modx->getOption('mirror.flushParameterName', null, 'flush');
-if ($modx->event->name != 'OnWebPageInit' || $modx->context->get('key') == 'mgr' || !isset($_GET[$flushParameterName])) {
+$flushParameterName = trim($modx->getOption('flushParameter', $scriptProperties, ''));
+if ($modx->event->name != 'OnWebPageInit' || $modx->context->get('key') == 'mgr' || (!empty($flushParameterName) && !isset($_GET[$flushParameterName]))) {
 	return;
 } else {
 	$resourceId = $modx->resourceIdentifier;
@@ -15,6 +15,7 @@ if ($modx->event->name != 'OnWebPageInit' || $modx->context->get('key') == 'mgr'
 		return;
 	}
 }
+unset($scriptProperties['flushParameter']);
 require_once $modx->getOption('mirror.core_path', null, $modx->getOption('core_path') . 'components/mirror/') . 'model/mirror/mirror.class.php';
 
 $objectsMeta = array(

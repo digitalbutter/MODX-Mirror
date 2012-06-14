@@ -24,6 +24,12 @@ $properties = array(
 		'options' => '',
 		'value' => true,
 	),
+	array(
+		'name' => 'flushParameter',
+		'type' => 'textfield',
+		'options' => '',
+		'value' => 'flush',
+	),
 );
 foreach ($properties as $i => $property) {
 	$properties[$i]['desc'] = 'mirror.prop.' . $property['name'];
