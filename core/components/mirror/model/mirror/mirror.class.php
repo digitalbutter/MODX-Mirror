@@ -31,9 +31,10 @@ class Mirror
 			'processComments' => true,
 			'verboseLogging' => true,
 			'logicalDelete' => true,
-			'assetsPath' => $modx->getOption('base_path') . 'web_assets/',
+			'assetsPath' => $modx->getOption('mirror.elements_path', null, $modx->getOption('base_path') . 'web_assets/')
 		), $config);
 		$this->_config['assetsPath'] = rtrim($this->_config['assetsPath'], '/\\') . '/';
+		$this->_modx->log(modX::LOG_LEVEL_DEBUG, 'Elements path set to "'.$this->_config['assetsPath'].'"', '', 'MODX-Mirror');
 		$assetsPath = $this->getOption('assetsPath');
 		if (!file_exists($assetsPath)) {
 			$this->modx->cacheManager->writeTree($assetsPath);
