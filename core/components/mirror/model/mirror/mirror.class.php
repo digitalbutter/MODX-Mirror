@@ -81,7 +81,7 @@ class Mirror
 							continue;
 						}
 						$categoryTree = str_replace('\\', '/', dirname($file));
-						$categoryTree = trim(str_replace($basePath, '', $categoryTree), '/');
+                        $categoryTree = trim(str_replace(str_replace('\\', '/', $basePath), '', $categoryTree), '/');
 						$metaData = array();
 						if ($this->processComments && $objectMeta['processComments']) {
 							$tokens = @token_get_all($rawContent);
@@ -260,6 +260,7 @@ class Mirror
 						$name = $object->get($nameField);
 						$categoryTree = $this->_getCategoryTree($object->get('category'), $objectName);
 						$fileName = $basePath . '/' . $categoryTree . ($categoryTree != '' ? '/' : '') . $name . '.' . $objectMeta['extension'];
+                        $fileName = str_replace('\\', '/', $fileName);
 						$processedFiles[$fileName] = true;
 						$rawContent = $object->getContent();
 						$events = array();
