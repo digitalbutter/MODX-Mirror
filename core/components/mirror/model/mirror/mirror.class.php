@@ -206,7 +206,14 @@ class Mirror
 						$object->setContent($rawContent);
 						if ($object->save()) {
 							if ($objectMeta['className'] == 'modPlugin' && isset($metaData['modxEvent']) && count($metaData['modxEvent']) > 0) {
+								$eventNames = array();
 								foreach ($metaData['modxEvent'] as $eventName) {
+									$parts = explode(':', $eventName, 2);
+									$eventNames[] = $eventName = $parts[0];
+									$priority = isset($parts[1]) ? intval($parts[1]) : 0;
+									if ($priority < 0) {
+										$priority = 0;
+									}
 									/**
 									 * @var modPluginEvent $pluginEvent
 									 */
@@ -214,13 +221,12 @@ class Mirror
 										'pluginid' => $object->get('id'),
 										'event' => $eventName,
 									));
-									if ($pluginEvent) {
-										$pluginEvent->remove();
+									if (!$pluginEvent) {
+										$pluginEvent = $this->modx->newObject('modPluginEvent');
+										$pluginEvent->set('pluginid', $object->get('id'));
+										$pluginEvent->set('event', $eventName);
 									}
-									$pluginEvent = $this->modx->newObject('modPluginEvent');
-									$pluginEvent->set('pluginid', $object->get('id'));
-									$pluginEvent->set('event', $eventName);
-									$pluginEvent->set('priority', 0);
+									$pluginEvent->set('priority', $priority);
 									if (!$pluginEvent->save()) {
 										$this->_log('eventNotAttached', array(
 											'event' => $eventName,
@@ -228,14 +234,10 @@ class Mirror
 										));
 									}
 								}
-								$pluginEvents = $object->getMany('PluginEvents', array(
-									'event:NOT IN' => $metaData['modxEvent'],
+								$this->modx->removeCollection('modPluginEvent', array(
+									'pluginid' => $object->get('id'),
+									'event:NOT IN' => $eventNames,
 								));
-								if (is_array($pluginEvents) && count($pluginEvents) > 0) {
-									foreach ($pluginEvents as $pluginEvent) {
-										$pluginEvent->remove();
-									}
-								}
 							}
 							if ($this->cacheEnabled) {
 								if ($fileId > 0) {
@@ -260,7 +262,7 @@ class Mirror
 						$name = $object->get($nameField);
 						$categoryTree = $this->_getCategoryTree($object->get('category'), $objectName);
 						$fileName = $basePath . '/' . $categoryTree . ($categoryTree != '' ? '/' : '') . $name . '.' . $objectMeta['extension'];
-                        $fileName = str_replace('\\', '/', $fileName);
+						$fileName = str_replace('\\', '/', $fileName);
 						$processedFiles[$fileName] = true;
 						$rawContent = $object->getContent();
 						$events = array();
@@ -272,7 +274,7 @@ class Mirror
 								$pluginEvents = $object->getMany('PluginEvents', $criteria);
 								if (is_array($pluginEvents) && count($pluginEvents) > 0) {
 									foreach ($pluginEvents as $pluginEvent) {
-										$events[] = $pluginEvent->get('event');
+										$events[] = $pluginEvent->get('event') . ':' . $pluginEvent->get('priority');
 									}
 								}
 							}
