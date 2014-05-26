@@ -594,7 +594,7 @@ EOD;
 EOD;
 		}
 		$content .= PHP_EOL . $rawContent;
-		return $this->modx->cacheManager->writeFile($fileName, trim($content), 'w');
+		return $this->modx->cacheManager->writeFile($fileName, trim($content) . PHP_EOL, 'w');
 	}
 
 	function _deleteFile($fileName)
